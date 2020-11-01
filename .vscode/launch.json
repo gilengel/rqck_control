@@ -11,12 +11,11 @@
             "cargo": {
                 "args": [
                     "build"
-                    //"--lib"
                 ],
             },
             "program": "${cargo:program}",
-            "args": ["4152", "5389"],
-            //"env": { "RUST_BACKTRACE": "1" },
+            //"args": ["set_intensity", "--intensity", "100"],
+            "args": ["disable", "lower"],
             "stopOnEntry": false,
             "sourceLanguages": [
               "rust"
