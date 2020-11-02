@@ -1,4 +1,4 @@
-use clap::{arg_enum, clap_app, value_t, values_t};
+use clap::{clap_app, values_t, ArgMatches};
 use rusb::{Context, Device, DeviceDescriptor, DeviceHandle, Result, UsbContext};
 
 #[derive(Debug)]
@@ -9,10 +9,11 @@ struct Endpoint {
     address: u8,
 }
 
-
-
 mod commands;
-use commands::{ColorRGB, Zone, apply_changes, disable_lower_zone, disable_upper_zone, set_intensity, switch_mode_to_steady};
+use commands::{
+    apply_changes, disable_lower_zone, disable_upper_zone, set_intensity, switch_mode_to_steady,
+    BlackColor, ColorRGB, Zone,
+};
 
 fn main() -> Result<()> {
     match Context::new() {
@@ -46,10 +47,12 @@ fn main() -> Result<()> {
 
                     (@subcommand solid =>
                         (about: "Disables one of the two zones of the LEDs on your pad")
-                        (@arg ZONE: +required  "Zones you want to disable")
-                        (@arg RED: +required  "Amount of red color")
-                        (@arg GREEN: +required  "Amount of green color")
-                        (@arg BLUE: +required "Amount of blue color")
+                        (@arg RED: +required "Amount of red color for the specified ZONE")
+                        (@arg GREEN: +required "Amount of green color for the specified ZONE")
+                        (@arg BLUE: +required "Amount of blue color for the specified ZONE")
+                        (@arg RED2: "Amount of red color for the specified ZONE")
+                        (@arg GREEN2: "Amount of green color for the specified ZONE")
+                        (@arg BLUE2: "Amount of blue color for the specified ZONE")
                     )
                 ).get_matches();
 
@@ -89,23 +92,15 @@ fn main() -> Result<()> {
                 }
 
                 if let Some(matches) = matches.subcommand_matches("solid") {
-                    let zone = value_t!(matches, "ZONE", Zone).unwrap_or_else(|e| e.exit());
-                    let red = matches.value_of("RED").unwrap();
-                    let green = matches.value_of("GREEN").unwrap();
-                    let blue = matches.value_of("BLUE").unwrap();
-                    
-                    if let (Ok(red), Ok(green), Ok(blue)) = (red.parse::<u8>(), green.parse::<u8>(), blue.parse::<u8>()) {
-                        let range = 0..=255;
+                    //let zone1 = value_t!(matches, "ZONE", Zone);
+                    let upper_zone_color = parse_color(matches, "RED", "GREEN", "BLUE");
 
-                        if !range.contains(&red) || !range.contains(&green) || !range.contains(&blue)  {
-                            println!("The provided values for RED, GREEN, BLUE must be positive numbers are not in the range of 0-255");
-                        } 
+                    //let zone2 = value_t!(matches, "SECOND_ZONE", Zone);
+                    let lower_zone_color = parse_color(matches, "RED2", "GREEN2", "BLUE2");
 
-                        switch_mode_to_steady(&mut handle, zone, ColorRGB::new(red, green, blue))?;
-                        apply_changes(&mut handle)?;                   
-                    }
+                    switch_mode_to_steady(&mut handle, upper_zone_color, lower_zone_color)?;
+                    apply_changes(&mut handle)?;                    
                 }
-
 
                 // cleanup after use
                 handle.release_interface(endpoint.iface)?;
@@ -119,6 +114,31 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+fn parse_color(
+    matches: &ArgMatches,
+    red_arg_str: &str,
+    green_arg_str: &str,
+    blue_arg_str: &str,
+) -> ColorRGB {
+    let red = matches.value_of(red_arg_str).unwrap();
+    let green = matches.value_of(green_arg_str).unwrap();
+    let blue = matches.value_of(blue_arg_str).unwrap();
+
+    if let (Ok(red), Ok(green), Ok(blue)) =
+        (red.parse::<u8>(), green.parse::<u8>(), blue.parse::<u8>())
+    {
+        let range = 0..=255;
+
+        if !range.contains(&red) || !range.contains(&green) || !range.contains(&blue) {
+            println!("The provided values for RED, GREEN, BLUE must be positive numbers are not in the range of 0-255");
+        }
+
+        return ColorRGB::new(red, green, blue);
+    }
+
+    BlackColor
 }
 
 fn open_device<T: UsbContext>(

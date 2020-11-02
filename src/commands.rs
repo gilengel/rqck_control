@@ -23,7 +23,7 @@ impl ColorRGB {
     }
 }
 
-const BlackColor : ColorRGB = ColorRGB { red: 0, green: 0, blue: 0 };
+pub const BlackColor : ColorRGB = ColorRGB { red: 0, green: 0, blue: 0 };
 
 pub fn clear<T: UsbContext>(handle: &mut DeviceHandle<T>) -> Result<usize> {
     let timeout = Duration::from_secs(5);
@@ -85,11 +85,8 @@ pub fn set_intensity<T: UsbContext>(handle: &mut DeviceHandle<T>, intensity: u8)
 
 
 /// Currently not working
-pub fn switch_mode_to_steady<T: UsbContext>(handle: &mut DeviceHandle<T>, zone: Zone, color: ColorRGB) -> Result<usize> {
+pub fn switch_mode_to_steady<T: UsbContext>(handle: &mut DeviceHandle<T>, upper_color: ColorRGB, lower_color: ColorRGB) -> Result<usize> {
     let timeout = Duration::from_secs(5);
-
-    let upper_color = if zone == Zone::Upper { &color } else { &BlackColor };
-    let lower_color = if zone == Zone::Lower { &color } else { &BlackColor };
 
     let data: [u8; 524] = [
         0x0e, 0x00, 0x02, 0x00, lower_color.red, lower_color.green, lower_color.blue, 0xff, 0x32, 0xc8, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,

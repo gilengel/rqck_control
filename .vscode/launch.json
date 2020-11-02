@@ -16,7 +16,7 @@
             "program": "${cargo:program}",
             //"args": ["set_intensity", "--intensity", "100"],
             //"args": ["disable", "lower"],
-            "args": ["solid", "upper", "255", "0", "0"],
+            "args": ["solid", "0", "255", "0", "0", "0", "255"],
             "stopOnEntry": false,
             "sourceLanguages": [
               "rust"
